@@ -1,6 +1,6 @@
 aws_region         = "us-east-2"
 cluster_name       = "eks-group-sand"
-kubernetes_version = "1.29"
+kubernetes_version = "1.35"
 environment        = "sandbox"
 node_group_name    = "eks-group-sand-nodegroup"
 node_instance_type = "t3.medium"
