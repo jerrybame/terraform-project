@@ -14,7 +14,7 @@ on:
 
 jobs:
   deploy-cluster:
-    name: Deploy EKS Cluster
+    name: 1 - EKS Cluster
     runs-on: ubuntu-latest
 
     steps:
@@ -34,23 +34,109 @@ jobs:
           terraform_version: 1.3.0
 
       - name: Terraform Init
-        working-directory: eks
+        working-directory: eks/cluster
         run: terraform init
 
       - name: Terraform Validate
-        working-directory: eks
+        working-directory: eks/cluster
         run: terraform validate
 
       - name: Terraform Plan
-        working-directory: eks
+        working-directory: eks/cluster
         run: terraform plan
 
       - name: Terraform Apply
         if: github.event.inputs.action == 'apply'
-        working-directory: eks
+        working-directory: eks/cluster
         run: terraform apply -auto-approve
 
       - name: Terraform Destroy
         if: github.event.inputs.action == 'destroy'
-        working-directory: eks
+        working-directory: eks/cluster
+        run: terraform destroy -auto-approve
+
+  deploy-addons:
+    name: 2 - EKS Addons
+    runs-on: ubuntu-latest
+    needs: deploy-cluster
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.3.0
+
+      - name: Terraform Init
+        working-directory: eks/addons
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: eks/addons
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: eks/addons
+        run: terraform plan
+
+      - name: Terraform Apply
+        if: github.event.inputs.action == 'apply'
+        working-directory: eks/addons
+        run: terraform apply -auto-approve
+
+      - name: Terraform Destroy
+        if: github.event.inputs.action == 'destroy'
+        working-directory: eks/addons
+        run: terraform destroy -auto-approve
+
+  deploy-nodegroup:
+    name: 3 - EKS Node Group
+    runs-on: ubuntu-latest
+    needs: deploy-cluster
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.3.0
+
+      - name: Terraform Init
+        working-directory: eks/nodegroup
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: eks/nodegroup
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: eks/nodegroup
+        run: terraform plan
+
+      - name: Terraform Apply
+        if: github.event.inputs.action == 'apply'
+        working-directory: eks/nodegroup
+        run: terraform apply -auto-approve
+
+      - name: Terraform Destroy
+        if: github.event.inputs.action == 'destroy'
+        working-directory: eks/nodegroup
         run: terraform destroy -auto-approve
