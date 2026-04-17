@@ -13,17 +13,17 @@ variable "ami_id" {
 variable "instance_type" {
   description = "EC2 instance type"
   type        = string
-  default     = "t3.micro"
+  default     = "t2.micro"
 }
 
 variable "instance_name" {
   description = "Name tag for the EC2 instance"
   type        = string
-  default     = "my-ec2-instance"
+  default     = "acit-sand-devops"
 }
 
 variable "environment" {
   description = "Environment tag (e.g. dev, staging, prod)"
   type        = string
-  default     = "dev"
+  default     = "sandbox"
 }
