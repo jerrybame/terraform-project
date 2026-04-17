@@ -5,7 +5,7 @@ variable "aws_region" {
 
 variable "cluster_name" {
   type    = string
-  default = "eks-group-sand"
+  default = "eks-group-one"
 }
 
 variable "kubernetes_version" {

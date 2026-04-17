@@ -44,7 +44,7 @@ jobs:
       - name: Import Existing Cluster IAM Role
         if: github.event.inputs.action == 'apply'
         working-directory: eks/cluster
-        run: terraform import aws_iam_role.eks_cluster_role eks-group-sand-cluster-role || true
+        run: terraform import aws_iam_role.eks_cluster_role eks-group-one-cluster-role || true
 
       - name: Terraform Plan
         working-directory: eks/cluster
@@ -135,7 +135,7 @@ jobs:
       - name: Import Existing Node IAM Role
         if: github.event.inputs.action == 'apply'
         working-directory: eks/nodegroup
-        run: terraform import aws_iam_role.eks_node_role eks-group-sand-node-role || true
+        run: terraform import aws_iam_role.eks_node_role eks-group-one-node-role || true
 
       - name: Terraform Plan
         working-directory: eks/nodegroup

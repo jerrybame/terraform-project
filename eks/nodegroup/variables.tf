@@ -5,12 +5,12 @@ variable "aws_region" {
 
 variable "cluster_name" {
   type    = string
-  default = "eks-group-sand"
+  default = "eks-group-one"
 }
 
 variable "node_group_name" {
   type    = string
-  default = "eks-group-sand-nodegroup"
+  default = "eks-group-one-nodegroup"
 }
 
 variable "node_instance_type" {
