@@ -5,7 +5,7 @@ terraform {
       version = "~> 5.0"
     }
   }
-  required_version = ">= 1.3.0"
+  required_version = ">= 1.5.0"
 }
 
 provider "aws" {
@@ -24,11 +24,6 @@ data "aws_subnets" "default" {
 }
 
 # IAM Role for EKS Cluster
-import {
-  to = aws_iam_role.eks_cluster_role
-  id = "eks-group-sand-cluster-role"
-}
-
 resource "aws_iam_role" "eks_cluster_role" {
   name = "${var.cluster_name}-cluster-role"
 
