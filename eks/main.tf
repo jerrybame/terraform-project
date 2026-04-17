@@ -34,7 +34,6 @@ resource "aws_eks_cluster" "main" {
 
   vpc_config {
     subnet_ids              = data.aws_subnets.default.ids
-    vpc_id                  = data.aws_vpc.default.id
     endpoint_private_access = true
     endpoint_public_access  = true
   }
