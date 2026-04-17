@@ -1,16 +1,19 @@
 name: Terraform Deploy
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - '*.tf'
+      - '*.tfvars'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '*.tf'
+      - '*.tfvars'
   workflow_dispatch:
-    inputs:
-      action:
-        description: 'Action to perform'
-        required: true
-        default: 'apply'
-        type: choice
-        options:
-          - apply
-          - destroy
 
 jobs:
   deploy-staging:
@@ -50,12 +53,8 @@ jobs:
         run: terraform plan -var="environment=staging" -var="instance_name=acit-sand-devops-staging"
 
       - name: Terraform Apply
-        if: github.event.inputs.action == 'apply'
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: terraform apply -auto-approve -var="environment=staging" -var="instance_name=acit-sand-devops-staging"
-
-      - name: Terraform Destroy
-        if: github.event.inputs.action == 'destroy'
-        run: terraform destroy -auto-approve -var="environment=staging" -var="instance_name=acit-sand-devops-staging"
 
   deploy-production:
     name: Deploy EC2 - Production
@@ -95,9 +94,5 @@ jobs:
         run: terraform plan -var="environment=production" -var="instance_name=acit-sand-devops-prod"
 
       - name: Terraform Apply
-        if: github.event.inputs.action == 'apply'
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: terraform apply -auto-approve -var="environment=production" -var="instance_name=acit-sand-devops-prod"
-
-      - name: Terraform Destroy
-        if: github.event.inputs.action == 'destroy'
-        run: terraform destroy -auto-approve -var="environment=production" -var="instance_name=acit-sand-devops-prod"
