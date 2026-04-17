@@ -12,7 +12,7 @@ on:
 jobs:
   terraform:
     name: Terraform
-    runs-on: ip-172-31-32-200
+    runs-on: Acit-Github-Runners
 
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
