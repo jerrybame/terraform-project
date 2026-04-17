@@ -13,9 +13,10 @@ on:
           - destroy
 
 jobs:
-  terraform:
-    name: Terraform
+  deploy-staging:
+    name: Deploy EC2 - Staging
     runs-on: ubuntu-latest
+    environment: staging
 
     steps:
       - name: Checkout code
@@ -34,7 +35,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.3.0
+          terraform_version: 1.5.0
 
       - name: Terraform Init
         run: terraform init
@@ -46,12 +47,57 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan
+        run: terraform plan -var="environment=staging" -var="instance_name=acit-sand-devops-staging"
 
       - name: Terraform Apply
         if: github.event.inputs.action == 'apply'
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve -var="environment=staging" -var="instance_name=acit-sand-devops-staging"
 
       - name: Terraform Destroy
         if: github.event.inputs.action == 'destroy'
-        run: terraform destroy -auto-approve
+        run: terraform destroy -auto-approve -var="environment=staging" -var="instance_name=acit-sand-devops-staging"
+
+  deploy-production:
+    name: Deploy EC2 - Production
+    runs-on: ubuntu-latest
+    environment: production
+    needs: deploy-staging
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: Verify AWS credentials
+        run: aws sts get-caller-identity
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.0
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Format Check
+        run: terraform fmt -check
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -var="environment=production" -var="instance_name=acit-sand-devops-prod"
+
+      - name: Terraform Apply
+        if: github.event.inputs.action == 'apply'
+        run: terraform apply -auto-approve -var="environment=production" -var="instance_name=acit-sand-devops-prod"
+
+      - name: Terraform Destroy
+        if: github.event.inputs.action == 'destroy'
+        run: terraform destroy -auto-approve -var="environment=production" -var="instance_name=acit-sand-devops-prod"

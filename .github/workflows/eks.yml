@@ -13,9 +13,12 @@ on:
           - destroy
 
 jobs:
-  deploy-cluster:
-    name: 1 - EKS Cluster
+  # ── STAGING ────────────────────────────────────────────────────────────────
+
+  staging-cluster:
+    name: Staging - 1. EKS Cluster
     runs-on: ubuntu-latest
+    environment: staging
 
     steps:
       - name: Checkout code
@@ -48,22 +51,23 @@ jobs:
 
       - name: Terraform Plan
         working-directory: eks/cluster
-        run: terraform plan
+        run: terraform plan -var="environment=staging" -var="cluster_name=eks-group-one-staging"
 
       - name: Terraform Apply
         if: github.event.inputs.action == 'apply'
         working-directory: eks/cluster
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve -var="environment=staging" -var="cluster_name=eks-group-one-staging"
 
       - name: Terraform Destroy
         if: github.event.inputs.action == 'destroy'
         working-directory: eks/cluster
-        run: terraform destroy -auto-approve
+        run: terraform destroy -auto-approve -var="environment=staging" -var="cluster_name=eks-group-one-staging"
 
-  deploy-addons:
-    name: 2 - EKS Addons
+  staging-addons:
+    name: Staging - 2. EKS Addons
     runs-on: ubuntu-latest
-    needs: deploy-cluster
+    environment: staging
+    needs: staging-cluster
 
     steps:
       - name: Checkout code
@@ -91,22 +95,23 @@ jobs:
 
       - name: Terraform Plan
         working-directory: eks/addons
-        run: terraform plan
+        run: terraform plan -var="environment=staging" -var="cluster_name=eks-group-one-staging"
 
       - name: Terraform Apply
         if: github.event.inputs.action == 'apply'
         working-directory: eks/addons
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve -var="environment=staging" -var="cluster_name=eks-group-one-staging"
 
       - name: Terraform Destroy
         if: github.event.inputs.action == 'destroy'
         working-directory: eks/addons
-        run: terraform destroy -auto-approve
+        run: terraform destroy -auto-approve -var="environment=staging" -var="cluster_name=eks-group-one-staging"
 
-  deploy-nodegroup:
-    name: 3 - EKS Node Group
+  staging-nodegroup:
+    name: Staging - 3. EKS Node Group
     runs-on: ubuntu-latest
-    needs: deploy-cluster
+    environment: staging
+    needs: staging-cluster
 
     steps:
       - name: Checkout code
@@ -139,14 +144,158 @@ jobs:
 
       - name: Terraform Plan
         working-directory: eks/nodegroup
-        run: terraform plan
+        run: terraform plan -var="environment=staging" -var="cluster_name=eks-group-one-staging" -var="node_group_name=eks-group-one-staging-nodegroup"
 
       - name: Terraform Apply
         if: github.event.inputs.action == 'apply'
         working-directory: eks/nodegroup
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve -var="environment=staging" -var="cluster_name=eks-group-one-staging" -var="node_group_name=eks-group-one-staging-nodegroup"
 
       - name: Terraform Destroy
         if: github.event.inputs.action == 'destroy'
         working-directory: eks/nodegroup
-        run: terraform destroy -auto-approve
+        run: terraform destroy -auto-approve -var="environment=staging" -var="cluster_name=eks-group-one-staging" -var="node_group_name=eks-group-one-staging-nodegroup"
+
+  # ── PRODUCTION ─────────────────────────────────────────────────────────────
+
+  production-cluster:
+    name: Production - 1. EKS Cluster
+    runs-on: ubuntu-latest
+    environment: production
+    needs: [staging-addons, staging-nodegroup]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.0
+
+      - name: Terraform Init
+        working-directory: eks/cluster
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: eks/cluster
+        run: terraform validate
+
+      - name: Import Existing Cluster IAM Role
+        if: github.event.inputs.action == 'apply'
+        working-directory: eks/cluster
+        run: terraform import aws_iam_role.eks_cluster_role eks-group-one-cluster-role || true
+
+      - name: Terraform Plan
+        working-directory: eks/cluster
+        run: terraform plan -var="environment=production" -var="cluster_name=eks-group-one-prod"
+
+      - name: Terraform Apply
+        if: github.event.inputs.action == 'apply'
+        working-directory: eks/cluster
+        run: terraform apply -auto-approve -var="environment=production" -var="cluster_name=eks-group-one-prod"
+
+      - name: Terraform Destroy
+        if: github.event.inputs.action == 'destroy'
+        working-directory: eks/cluster
+        run: terraform destroy -auto-approve -var="environment=production" -var="cluster_name=eks-group-one-prod"
+
+  production-addons:
+    name: Production - 2. EKS Addons
+    runs-on: ubuntu-latest
+    environment: production
+    needs: production-cluster
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.0
+
+      - name: Terraform Init
+        working-directory: eks/addons
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: eks/addons
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: eks/addons
+        run: terraform plan -var="environment=production" -var="cluster_name=eks-group-one-prod"
+
+      - name: Terraform Apply
+        if: github.event.inputs.action == 'apply'
+        working-directory: eks/addons
+        run: terraform apply -auto-approve -var="environment=production" -var="cluster_name=eks-group-one-prod"
+
+      - name: Terraform Destroy
+        if: github.event.inputs.action == 'destroy'
+        working-directory: eks/addons
+        run: terraform destroy -auto-approve -var="environment=production" -var="cluster_name=eks-group-one-prod"
+
+  production-nodegroup:
+    name: Production - 3. EKS Node Group
+    runs-on: ubuntu-latest
+    environment: production
+    needs: production-cluster
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.0
+
+      - name: Terraform Init
+        working-directory: eks/nodegroup
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: eks/nodegroup
+        run: terraform validate
+
+      - name: Import Existing Node IAM Role
+        if: github.event.inputs.action == 'apply'
+        working-directory: eks/nodegroup
+        run: terraform import aws_iam_role.eks_node_role eks-group-one-node-role || true
+
+      - name: Terraform Plan
+        working-directory: eks/nodegroup
+        run: terraform plan -var="environment=production" -var="cluster_name=eks-group-one-prod" -var="node_group_name=eks-group-one-prod-nodegroup"
+
+      - name: Terraform Apply
+        if: github.event.inputs.action == 'apply'
+        working-directory: eks/nodegroup
+        run: terraform apply -auto-approve -var="environment=production" -var="cluster_name=eks-group-one-prod" -var="node_group_name=eks-group-one-prod-nodegroup"
+
+      - name: Terraform Destroy
+        if: github.event.inputs.action == 'destroy'
+        working-directory: eks/nodegroup
+        run: terraform destroy -auto-approve -var="environment=production" -var="cluster_name=eks-group-one-prod" -var="node_group_name=eks-group-one-prod-nodegroup"
