@@ -1,8 +1,8 @@
 aws_region         = "us-east-2"
-cluster_name       = "my-eks-cluster"
+cluster_name       = "eks-group-sand"
 kubernetes_version = "1.29"
 environment        = "sandbox"
-node_group_name    = "my-node-group"
+node_group_name    = "eks-group-sand-nodegroup"
 node_instance_type = "t3.medium"
 desired_nodes      = 2
 min_nodes          = 1

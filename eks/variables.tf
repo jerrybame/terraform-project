@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "cluster_name" {
   description = "Name of the EKS cluster"
   type        = string
-  default     = "my-eks-cluster"
+  default     = "eks-group-sand"
 }
 
 variable "kubernetes_version" {
@@ -19,7 +19,7 @@ variable "kubernetes_version" {
 variable "node_group_name" {
   description = "Name of the EKS node group"
   type        = string
-  default     = "my-node-group"
+  default     = "eks-group-sand-nodegroup"
 }
 
 variable "node_instance_type" {
